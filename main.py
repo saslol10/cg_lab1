@@ -225,9 +225,9 @@ for f in range(len(line5)):
     X1, Y1, Z1 = point_array[int(line5[f][1]) - 1][0], point_array[int(line5[f][1]) - 1][1], \
         point_array[int(line5[f][1]) - 1][2]
     # print(X0, Y0, X1, Y1)
-    x0, y0 = -int(Z0 * 5 + 500), int(X0 * 5 + 500)
-    x2, y2 = -int(Z2 * 5 + 500), int(X2 * 5 + 500)
-    x1, y1 = -int(Z1 * 5 + 500), int(X1 * 5 + 500)
+    x0, y0 = -int(Y0 * 5 + 500), int(Z0 * 5 + 500)
+    x2, y2 = -int(Y2 * 5 + 500), int(Z2 * 5 + 500)
+    x1, y1 = -int(Y1 * 5 + 500), int(Z1 * 5 + 500)
 
     foo(x0, x1, y0, y1, image)
     foo(x0, x2, y0, y2, image)
