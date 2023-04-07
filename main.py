@@ -218,79 +218,81 @@ class Model_Object:
 
 model = Model_Object()
 model.read_file('model_1.obj')
-# 5. Отрисовка вершин трёхмерной модели
-image_matrix = np.zeros((1000, 1000), dtype=np.uint8)
-for v in range(len(model.points)):
-    x0, y0, z0 = model.points[v][0], model.points[v][1], model.points[v][2]
-    image_matrix[-int(y0 * 5) + 500, int(z0 * 5) + 500] = 255
-
-image = Image.fromarray(image_matrix, 'L')
-image.show()
-image.save("model_1-points.jpg")
-
-image = np.zeros((1000, 1000), dtype=np.uint8)
 
 
-def foo(x0, x1, y0, y1, image):
-    steep = False
-
-    if (abs(x0 - x1) < abs(y0 - y1)):
-        x0, y0 = y0, x0
-        x1, y1 = y1, x1
-        steep = True
-
-    if (x0 > x1):
-        x0, x1 = x1, x0
-        y0, y1 = y1, y0
-
-    dx = x1 - x0
-    dy = y1 - y0
-    # print(x0,x1,y0,y1)
-    # print(f)
-    # print(line5[f])
-    if (x0 == x1):
-        return
-    derror = abs(dy / dx)
-    error = 0
-    y = y0
-    x = x0
-    for x in range(x0, x1):
-        if (steep):
-            image[y, x] = 255
-        else:
-            image[x, y] = 255
-
-        error += derror
-        if (error > .5):
-            if (y1 > y0):
-                y += 1
-            else:
-                y -= 1
-
-            error -= 1.
-
-
-# 7. Отрисовка рёбер трёхмерной модели
-for f in range(len(model.edges)):
-    X0, Y0, Z0 = model.points[int(model.edges[f][0]) - 1][0], model.points[int(model.edges[f][0]) - 1][1], \
-        model.points[int(model.edges[f][0]) - 1][2]
-    X2, Y2, Z2 = model.points[int(model.edges[f][2]) - 1][0], model.points[int(model.edges[f][2]) - 1][1], \
-        model.points[int(model.edges[f][2]) - 1][2]
-    X1, Y1, Z1 = model.points[int(model.edges[f][1]) - 1][0], model.points[int(model.edges[f][1]) - 1][1], \
-        model.points[int(model.edges[f][1]) - 1][2]
-    # print(X0, Y0, X1, Y1)
-    x0, y0 = -int(Y0 * 5 + 500), int(Z0 * 5 + 500)
-    x2, y2 = -int(Y2 * 5 + 500), int(Z2 * 5 + 500)
-    x1, y1 = -int(Y1 * 5 + 500), int(Z1 * 5 + 500)
-
-    foo(x0, x1, y0, y1, image)
-    foo(x0, x2, y0, y2, image)
-    foo(x1, x2, y1, y2, image)
-
-
-image = Image.fromarray(image, 'L')
-image.show()
-image.save("model_1-edges.jpg")
+# # 5. Отрисовка вершин трёхмерной модели
+# image_matrix = np.zeros((1000, 1000), dtype=np.uint8)
+# for v in range(len(model.points)):
+#     x0, y0, z0 = model.points[v][0], model.points[v][1], model.points[v][2]
+#     image_matrix[-int(y0 * 5) + 500, int(z0 * 5) + 500] = 255
+#
+# image = Image.fromarray(image_matrix, 'L')
+# image.show()
+# image.save("model_1-points.jpg")
+#
+# image = np.zeros((1000, 1000), dtype=np.uint8)
+#
+#
+# def foo(x0, x1, y0, y1, image):
+#     steep = False
+#
+#     if (abs(x0 - x1) < abs(y0 - y1)):
+#         x0, y0 = y0, x0
+#         x1, y1 = y1, x1
+#         steep = True
+#
+#     if (x0 > x1):
+#         x0, x1 = x1, x0
+#         y0, y1 = y1, y0
+#
+#     dx = x1 - x0
+#     dy = y1 - y0
+#     # print(x0,x1,y0,y1)
+#     # print(f)
+#     # print(line5[f])
+#     if (x0 == x1):
+#         return
+#     derror = abs(dy / dx)
+#     error = 0
+#     y = y0
+#     x = x0
+#     for x in range(x0, x1):
+#         if (steep):
+#             image[y, x] = 255
+#         else:
+#             image[x, y] = 255
+#
+#         error += derror
+#         if (error > .5):
+#             if (y1 > y0):
+#                 y += 1
+#             else:
+#                 y -= 1
+#
+#             error -= 1.
+#
+#
+# # 7. Отрисовка рёбер трёхмерной модели
+# for f in range(len(model.edges)):
+#     X0, Y0, Z0 = model.points[int(model.edges[f][0]) - 1][0], model.points[int(model.edges[f][0]) - 1][1], \
+#         model.points[int(model.edges[f][0]) - 1][2]
+#     X2, Y2, Z2 = model.points[int(model.edges[f][2]) - 1][0], model.points[int(model.edges[f][2]) - 1][1], \
+#         model.points[int(model.edges[f][2]) - 1][2]
+#     X1, Y1, Z1 = model.points[int(model.edges[f][1]) - 1][0], model.points[int(model.edges[f][1]) - 1][1], \
+#         model.points[int(model.edges[f][1]) - 1][2]
+#     # print(X0, Y0, X1, Y1)
+#     x0, y0 = int(Y0 * 5 + 400), int(Z0 * 5 + 4000)
+#     x2, y2 = int(Y2 * 5 + 400), int(Z2 * 5 + 4000)
+#     x1, y1 = int(Y1 * 5 + 400), int(Z1 * 5 + 4000)
+#
+#     foo(x0, x1, y0, y1, image)
+#     foo(x0, x2, y0, y2, image)
+#     foo(x1, x2, y1, y2, image)
+#
+#
+# image = Image.fromarray(image, 'L')
+# image.show()
+# image.save("model_1-edges.jpg")
 
 
 # 8. Барицентрические координаты
@@ -321,7 +323,7 @@ def draw_triangle(img, x0, x1, x2, y0, y1, y2):
         for j in range(int(ymin), int(ymax) + 1):
             lambda0, lambda1, lambda2 = baricentric(i, j, x0, y0, x1, y1, x2, y2)
             if lambda0 > 0 and lambda1 > 0 and lambda2 > 0:
-                img[i, j] = [r, g, b]
+                img[i][j] = [r, g, b]
 
 
 # 10. Тестирование функции
@@ -337,8 +339,14 @@ z0 = model.points[0][2]
 z1 = model.points[1][2]
 z2 = model.points[2][2]
 
+edge = model.edges[5000]
+x0, y0, z0 = model.points[edge[0] - 1]
+x1, y1, z1 = model.points[edge[1] - 1]
+x2, y2, z2 = model.points[edge[2] - 1]
+
 img = np.zeros((1000, 1000, 3), dtype=np.uint8)
-draw_triangle(img, 5 * x0 + 500, 5 * x1 + 500, 5 * x2 + 500, 5 * y0 + 500, 5 * y1 + 500, 5 * y2 + 500)
+draw_triangle(img, 15000 * x0 + 300, 15000 * x1 + 300, 15000 * x2 + 300, 15000 * y0 + 300, 15000 * y1 + 300,
+              15000 * y2 + 300)
 
 image = Image.fromarray(img)
 image.show()
@@ -352,9 +360,9 @@ for edge in model.edges:
     x1, y1, z1 = model.points[edge[1] - 1]
     x2, y2, z2 = model.points[edge[2] - 1]
 
-    x0, y0, z0 = (-y0 * 5 + 500), (z0 * 5 + 500), (x0 * 5 + 500)
-    x1, y1, z1 = (-y1 * 5 + 500), (z1 * 5 + 500), (x1 * 5 + 500)
-    x2, y2, z2 = (-y2 * 5 + 500), (z2 * 5 + 500), (x2 * 5 + 500)
+    x0, y0, z0 = (x0 * 6000 + 400), (y0 * 6000 + 400), (x0 * 6000 + 400)
+    x1, y1, z1 = (x1 * 6000 + 400), (y1 * 6000 + 400), (x1 * 6000 + 400)
+    x2, y2, z2 = (x2 * 6000 + 400), (y2 * 6000 + 400), (x2 * 6000 + 400)
 
     draw_triangle(img, x0, x1, x2, y0, y1, y2)
 
@@ -406,7 +414,7 @@ def project_coordinates(x, y, z, u0, v0, a_x, a_y, t_z):
     x, y, z = np.array([[a_x, 0, u0],
                         [0, a_y, v0],
                         [0, 0, 1]]) @ (np.array([x, y, z]) + np.array([0.005, -0.045, t_z]))
-    return x / 10000, y / 10000, z/10000
+    return x / 10000, y / 10000, z / 10000
 
 
 img = np.zeros((H, W, 3), dtype=np.uint8)
