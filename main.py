@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 import math
 import random
+from enum import IntFlag
 
 
 # # 1. Работа с изображениями.
@@ -191,9 +192,11 @@ import random
 
 # 4. - 7. Работа с трёхмерной моделью
 class Model_Object:
-    def __init__(self, points=[], edges=[]):
+    def __init__(self, points=[], edges=[], norm = [], num_norm=[]):
         self.points = points
         self.edges = edges
+        self.norm = norm
+        self.num_norm = num_norm
 
     def read_file(self, filename):
 
@@ -204,17 +207,21 @@ class Model_Object:
                 if line.startswith('v '):  # 4. Работа с трёхмерной моделью (вершины)
                     x, y, z = line[2:].split(' ')
                     self.points.append((float(x), float(y), float(z)))
+                elif line.startswith('vn '):
+                    x1, y1, z1 = line[3:].split(' ')
+                    self.norm.append(((float(x1), float(y1), float(z1))))
                 elif line.startswith('f '):  # 6. Работа с трёхмерной моделью (полигоны)
                     edge = line[2:].split(' ')
-
                     if len(edge) == 4:
                         v1, v2, v3, _ = edge
                     else:
                         v1, v2, v3 = edge
                     num_of_point1, num_of_point2, num_of_point3 = map(int, (
                         v1.split('/')[0], v2.split('/')[0], v3.split('/')[0]))
+                    num_of_vn1, num_of_vn2, num_of_vn3 = map(int,
+                                                             (v1.split('/')[2], v2.split('/')[2], v3.split('/')[2]))
                     self.edges.append((num_of_point1, num_of_point2, num_of_point3))
-
+                    self.num_norm.append((num_of_vn1, num_of_vn2, num_of_vn3))
 
 model = Model_Object()
 model.read_file('model_1.obj')
@@ -372,7 +379,9 @@ image.save("model_1-11.jpg")
 
 
 # 12. - 15.
-def draw_triangle(img, x0, y0, z0, x1, y1, z1, x2, y2, z2, z_buff, light=[0, 0, 1]):
+def draw_triangle(img, x0, y0, z0, x1, y1, z1, x2, y2, z2, z_buff, light=None):
+    if light is None:
+        light = [0, 0, 1]
     if x0 == x1 and x1 == x2 or y0 == y1 and y1 == y2:
         return
 
@@ -381,7 +390,7 @@ def draw_triangle(img, x0, y0, z0, x1, y1, z1, x2, y2, z2, z_buff, light=[0, 0, 
     if np.dot(normal, light) >= 0:
         return
 
-    color = (-255 * np.dot(normal, light) / np.linalg.norm(normal) / np.linalg.norm(light), 0, 0)
+    color = (255 * np.dot(normal, light) / np.linalg.norm(normal) / np.linalg.norm(light), 0, 0)
 
     x0, y0, z0 = project_coordinates(x0, y0, z0, u0, v0, a_x, a_y, t_z)
     x1, y1, z1 = project_coordinates(x1, y1, z1, u0, v0, a_x, a_y, t_z)
@@ -398,24 +407,19 @@ def draw_triangle(img, x0, y0, z0, x1, y1, z1, x2, y2, z2, z_buff, light=[0, 0, 
 
             if lambda0 > 0 and lambda1 > 0 and lambda2 > 0:
                 z = lambda0 * z0 + lambda1 * z1 + lambda2 * z2
-                # if i >= len(z_buff) or j >= len(z_buff):
-                #     continue
                 if z_buff[i][j] < z:
                     continue
                 img[i][j] = color
                 z_buff[i][j] = z
 
 
+def project_coordinates(x, y, z, u0, v0, a_x, a_y, t_z):
+    x, y, z = np.array([[a_x, 0, u0], [0, a_y, v0], [0, 0, 1]]) @ (np.array([x, y, z]) + np.array([0.005, -0.045, t_z]))
+    return (x / z, y / z, z)
+
+
 H = 1000
 W = 1000
-
-
-def project_coordinates(x, y, z, u0, v0, a_x, a_y, t_z):
-    x, y, z = np.array([[a_x, 0, u0],
-                        [0, a_y, v0],
-                        [0, 0, 1]]) @ (np.array([x, y, z]) + np.array([0.005, -0.045, t_z]))
-    return x / 10000, y / 10000, z / 10000
-
 
 img = np.zeros((H, W, 3), dtype=np.uint8)
 z_buffer = np.full((H, W), np.inf)
@@ -423,43 +427,105 @@ z_buffer = np.full((H, W), np.inf)
 u0 = 500
 v0 = 500
 
-a_x = 100
-a_y = 100
+a_x = 1000
+a_y = 1000
+t_z = 0.2
+alpha = 90
+beta = -90
+gamma = 20
 
-t_z = 0.1
+R = np.array([[1, 0, 0], [0, math.cos(alpha), math.sin(alpha)], [0, -math.sin(alpha), math.cos(alpha)]]) @ \
+    np.array([[math.cos(beta), 0, math.sin(beta)], [0, 1, 0], [-math.sin(beta), 0, math.cos(beta)]]) @ \
+    np.array([[math.cos(gamma), math.sin(gamma), 0], [-math.sin(gamma), math.cos(gamma), 0], [0, 0, 1]])
 
 for edge in model.edges:
     x0, y0, z0 = model.points[edge[0] - 1]
     x1, y1, z1 = model.points[edge[1] - 1]
     x2, y2, z2 = model.points[edge[2] - 1]
 
-    x0, y0, z0 = np.array([x0, y0, z0])
-    x1, y1, z1 = np.array([x1, y1, z1])
-    x2, y2, z2 = np.array([x2, y2, z2])
+    # x0, y0, z0 = (x0 * 6000 + 400), (y0 * 6000 + 400), (z0 * 6000 + 400)
+    # x1, y1, z1 = (x1 * 6000 + 400), (y1 * 6000 + 400), (z1 * 6000 + 400)
+    # x2, y2, z2 = (x2 * 6000 + 400), (y2 * 6000 + 400), (z2 * 6000 + 400)
+
+    x0, y0, z0 = R @ np.array([x0, y0, z0])
+    x1, y1, z1 = R @ np.array([x1, y1, z1])
+    x2, y2, z2 = R @ np.array([x2, y2, z2])
 
     draw_triangle(img, x0, y0, z0, x1, y1, z1, x2, y2, z2, z_buff=z_buffer)
 
 image = Image.fromarray(img)
 image.show()
-image.save("model_1-16.jpg")
+image.save("model_1-16-17.jpg")
 
-# # 17. Поворот модели:
-# H = 1000
-# W = 1000
-# img = np.zeros((H, W, 3), dtype=np.uint8)
-# z_buffer = np.full((H, W), np.inf)
-#
-# for edge in model.edges:
-#     x0, y0, z0 = model.points[edge[0] - 1]
-#     x1, y1, z1 = model.points[edge[1] - 1]
-#     x2, y2, z2 = model.points[edge[2] - 1]
-#
-#     x0, y0, z0 = (-y0 * 5 + 500), (-x0 * 5 + 500), (z0 * 5 + 500)
-#     x1, y1, z1 = (-y1 * 5 + 500), (-x1 * 5 + 500), (z1 * 5 + 500)
-#     x2, y2, z2 = (-y2 * 5 + 500), (-x2 * 5 + 500), (z2 * 5 + 500)
-#
-#     draw_triangleNext(img, x0, y0, z0, x1, y1, z1, x2, y2, z2, z_buff=z_buffer)
-#
-# image = Image.fromarray(img)
-# image.show()
-# image.save("fox-17.jpg")
+
+# 18. Затенение Гуро.
+def draw_triangle_guro(img, x0, y0, z0, x1, y1, z1, x2, y2, z2, z_buff, n0, n1, n2):
+    light = [0, 0, 1]
+
+    normal = -np.cross([x1 - x0, y1 - y0, z1 - z0], [x1 - x2, y1 - y2, z1 - z2])
+    if np.dot(normal, light) >= 0:
+        return
+
+    color = (255 * np.dot(normal, light) / (np.linalg.norm(normal) * np.linalg.norm(light)), 0, 0)
+
+    l0 = np.dot(n0, light) / (np.linalg.norm(n0) * np.linalg.norm(light))
+    l1 = np.dot(n1, light) / (np.linalg.norm(n1) * np.linalg.norm(light))
+    l2 = np.dot(n2, light) / (np.linalg.norm(n2) * np.linalg.norm(light))
+
+    x0, y0, z0 = project_coordinates(x0, y0, z0, u0, v0, a_x, a_y, t_z)
+    x1, y1, z1 = project_coordinates(x1, y1, z1, u0, v0, a_x, a_y, t_z)
+    x2, y2, z2 = project_coordinates(x2, y2, z2, u0, v0, a_x, a_y, t_z)
+
+    xmin = 0 if min(x0, x1, x2) < 0 else min(x0, x1, x2)
+    ymin = 0 if min(y0, y1, y2) < 0 else min(y0, y1, y2)
+    xmax = max(x0, x1, x2)
+    ymax = max(y0, y1, y2)
+
+    for i in range(int(xmin), int(xmax) + 1):
+        for j in range(int(ymin), int(ymax) + 1):
+            lambda0, lambda1, lambda2 = baricentric(i, j, x0, y0, x1, y1, x2, y2)
+
+            if lambda0 > 0 and lambda1 > 0 and lambda2 > 0:
+                z = lambda0 * z0 + lambda1 * z1 + lambda2 * z2
+                if z_buff[i][j] < z:
+                    continue
+                img[i][j] = (255 * (lambda0 * abs(l0) + lambda1 * abs(l1) + lambda2 * abs(l2)), 0, 0)
+                z_buff[i][j] = z
+
+
+img = np.zeros((1000, 1000, 3), dtype=np.uint8)
+z_buffer = np.full((1000, 1000), np.inf)
+u0 = 500
+v0 = 500
+a_x = 1000
+a_y = 1000
+t_z = 0.2
+
+alpha = 90
+beta = -90
+gamma = 20
+
+R = np.array([[1, 0, 0], [0, math.cos(alpha), math.sin(alpha)], [0, -math.sin(alpha), math.cos(alpha)]]) @ \
+    np.array([[math.cos(beta), 0, math.sin(beta)], [0, 1, 0], [-math.sin(beta), 0, math.cos(beta)]]) @ \
+    np.array([[math.cos(gamma), math.sin(gamma), 0], [-math.sin(gamma), math.cos(gamma), 0], [0, 0, 1]])
+i = 0
+for edge in model.edges:
+    i = i + 1
+    x0, y0, z0 = model.points[edge[0] - 1]
+    x1, y1, z1 = model.points[edge[1] - 1]
+    x2, y2, z2 = model.points[edge[2] - 1]
+
+    if i < 15248:
+        n0 = model.norm[edge[0] - 1]
+        n1 = model.norm[edge[1] - 1]
+        n2 = model.norm[edge[2] - 1]
+
+    x0, y0, z0 = R @ np.array([x0, y0, z0])
+    x1, y1, z1 = R @ np.array([x1, y1, z1])
+    x2, y2, z2 = R @ np.array([x2, y2, z2])
+
+    draw_triangle_guro(img, x0, y0, z0, x1, y1, z1, x2, y2, z2, z_buffer, n0, n1, n2)
+
+image = Image.fromarray(img)
+image.show()
+image.save("model_1-18.jpg")
